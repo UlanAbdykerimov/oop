@@ -82,11 +82,28 @@ public class Deck
             deck.set(i, y);
             deck.set(randomIndex, x);
         }
+        if (deck == null || deck.isEmpty()) {
+            throw new IllegalStateException("Cannot shuffle an empty deck.");
+        }
+        Collections.shuffle(deck); // Shuffle the cards randomly
     }
 
     public void removeHighCards() {
         deck.removeIf(card -> card.getValue() >= 9 && card.getValue() <= 13);
     }
+    public void restoreHighCards() {
+        // Restore cards from 9 to King into the deck if they are not already present
+        for (int rank = 9; rank <= KING; rank++) {
+            for (int suit = HEARTS; suit <= CLUBS; suit++) {
+                Card card = new Card(rank, suit);
+                if (!deck.contains(card)) {
+                    deck.add(card); // Add the card only if it is missing
+                }
+            }
+        }
+    }
+
+
 
 
 }

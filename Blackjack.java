@@ -1,5 +1,3 @@
-import java.util.concurrent.atomic.AtomicBoolean;
-
 /**
  * This plays the Blackjack card game that we wrote throughout 
  * the videos in this lesson.
@@ -103,46 +101,39 @@ public class Blackjack extends ConsoleProgram
      * 
      * Return whether or not the player busted.
      */
-    private boolean playerTurn(Hand player, Deck deck, AtomicBoolean cardsRemoved)
-    {
-        while (true)
-        {
+    private boolean playerTurn(Hand player, Deck deck, boolean[] cardsRemoved, int fieldIndex) {
+        while (true) {
             int value = player.getValue();
-            if (value >= 17 && !cardsRemoved.get())
-            {
+            if (value >= 17 && !cardsRemoved[fieldIndex]) {
                 System.out.println("Your hand has value " + value);
-                String buyAdvantage = readLine("Would you like to remove all cards from 9 to King from the deck for the next round? It costs 50% of potential winnings. (Y/N): ");
-                if (buyAdvantage.equalsIgnoreCase("Y"))
-                {
+                String buyAdvantage = readLine("Would you like to remove all cards from 9 to King from the deck for this field? It costs 50% of potential winnings. (Y/N): ");
+                if (buyAdvantage.equalsIgnoreCase("Y")) {
                     deck.removeHighCards();
-                    cardsRemoved.set(true);
-                    System.out.println("All cards from 9 to King have been removed from the deck for the next round.");
+                    cardsRemoved[fieldIndex] = true;
+                    System.out.println("All cards from 9 to King have been removed from the deck for this field.");
                 }
             }
 
             String move = getPlayerMove();
 
-            if (move.equals("hit"))
-            {
+            if (move.equals("hit")) {
                 Card c = deck.deal();
                 System.out.println("Your card was: " + c);
                 player.addCard(c);
                 System.out.println("Player's hand");
                 System.out.println(player);
 
-                if (player.busted())
-                {
+                if (player.busted()) {
                     return true;
                 }
-            }
-            else
-            {
+            } else {
                 // If we didn't hit, the player chose to
                 // stand, which means the turn is over.
                 return false;
             }
         }
     }
+
 
 
     private boolean playerWins(Hand player, Hand dealer)
@@ -165,49 +156,43 @@ public class Blackjack extends ConsoleProgram
         return player.getValue() == dealer.getValue();
     }
 
-    private double findWinner(Hand dealer, Hand player, int bet, boolean cardsRemoved)
-    {
-        if(playerWins(player, dealer))
-        {
+    private double findWinner(Hand dealer, Hand player, int bet, boolean cardsRemoved) {
+        if (playerWins(player, dealer)) {
             System.out.println("Player wins!");
-            
-            if(player.hasBlackjack())
-            {
+
+            if (player.hasBlackjack()) {
                 return 1.5 * bet;
             }
-            if(cardsRemoved){
-                return 0.5 * bet;
+            if (cardsRemoved) {
+                return 0.5 * bet; // Reward adjusted for removed cards
             }
-            
+
             return bet;
-        }
-        else if(push(player, dealer))
-        {
+        } else if (push(player, dealer)) {
             System.out.println("You push");
             return 0;
-        }
-        else
-        {
+        } else {
             System.out.println("Dealer wins");
             return -bet;
         }
     }
 
-    private double playRound(double bankroll)
-    {
-        AtomicBoolean cardsRemoved = new AtomicBoolean(false);
+
+    private double playRound(double bankroll) {
+        boolean[] cardsRemoved = new boolean[5]; // Track removed cards for each field
         int roundNums = readInt("How many playing fields you want to play on? (max 5): ");
         if (roundNums < 1) roundNums = 1;
         else if (roundNums > 5) roundNums = 5;
+
         int[] bet = new int[6];
-        for (int i=1; i<=roundNums; i++) {
+        for (int i = 1; i <= roundNums; i++) {
             bet[i] = readInt("What is your bet for " + i + " field: ");
         }
 
         Deck deck = new Deck();
         deck.shuffle();
 
-        Hand[] players = new Hand[5];
+        Hand[] players = new Hand[roundNums];
         for (int i = 0; i < roundNums; i++) {
             players[i] = new Hand();
             players[i].addCard(deck.deal());
@@ -224,9 +209,18 @@ public class Blackjack extends ConsoleProgram
         for (int i = 0; i < roundNums; i++) {
             System.out.println("Player's field " + (i + 1) + ": ");
             System.out.println(players[i]);
-            boolean playerBusted = playerTurn(players[i], deck, cardsRemoved);
+
+            // Play turn for the current field
+            boolean playerBusted = playerTurn(players[i], deck, cardsRemoved, i);
             if (playerBusted) {
                 System.out.println("You busted on field " + (i + 1) + " :(");
+            }
+
+            // Restore cards if removed for the next field
+            if (cardsRemoved[i]) {
+                deck.restoreHighCards();
+                cardsRemoved[i] = false;
+                System.out.println("High cards (9 to King) restored for the next field.");
             }
         }
 
@@ -234,15 +228,15 @@ public class Blackjack extends ConsoleProgram
         dealerTurn(dealer, deck);
 
         for (int i = 0; i < roundNums; i++) {
-            System.out.print("Hand on the field " + (i + 1) + " (" + bet[i+1] + "): " + cardsRemoved);
-            double bankrollChange = findWinner(dealer, players[i], bet[i + 1], cardsRemoved.get());
+            System.out.print("Hand on the field " + (i + 1) + " (" + bet[i + 1] + "): " + cardsRemoved[i]);
+            double bankrollChange = findWinner(dealer, players[i], bet[i + 1], cardsRemoved[i]);
             bankroll += bankrollChange;
         }
 
         System.out.println("New bankroll: " + bankroll);
-
         return bankroll;
     }
+
 
 
     /**
