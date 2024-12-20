@@ -1,3 +1,5 @@
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * This plays the Blackjack card game that we wrote throughout 
  * the videos in this lesson.
@@ -101,34 +103,47 @@ public class Blackjack extends ConsoleProgram
      * 
      * Return whether or not the player busted.
      */
-    private boolean playerTurn(Hand player, Deck deck)
+    private boolean playerTurn(Hand player, Deck deck, AtomicBoolean cardsRemoved)
     {
-        while(true)
+        while (true)
         {
+            int value = player.getValue();
+            if (value >= 17 && !cardsRemoved.get())
+            {
+                System.out.println("Your hand has value " + value);
+                String buyAdvantage = readLine("Would you like to remove all cards from 9 to King from the deck for the next round? It costs 50% of potential winnings. (Y/N): ");
+                if (buyAdvantage.equalsIgnoreCase("Y"))
+                {
+                    deck.removeHighCards();
+                    cardsRemoved.set(true);
+                    System.out.println("All cards from 9 to King have been removed from the deck for the next round.");
+                }
+            }
+
             String move = getPlayerMove();
-            
-            if(move.equals("hit"))
+
+            if (move.equals("hit"))
             {
                 Card c = deck.deal();
                 System.out.println("Your card was: " + c);
                 player.addCard(c);
                 System.out.println("Player's hand");
                 System.out.println(player);
-                
-                if(player.busted())
+
+                if (player.busted())
                 {
                     return true;
                 }
             }
             else
             {
-                // If we didn't hit, the player chose to 
+                // If we didn't hit, the player chose to
                 // stand, which means the turn is over.
                 return false;
             }
-            
         }
     }
+
 
     private boolean playerWins(Hand player, Hand dealer)
     {
@@ -150,7 +165,7 @@ public class Blackjack extends ConsoleProgram
         return player.getValue() == dealer.getValue();
     }
 
-    private double findWinner(Hand dealer, Hand player, int bet)
+    private double findWinner(Hand dealer, Hand player, int bet, boolean cardsRemoved)
     {
         if(playerWins(player, dealer))
         {
@@ -159,6 +174,9 @@ public class Blackjack extends ConsoleProgram
             if(player.hasBlackjack())
             {
                 return 1.5 * bet;
+            }
+            if(cardsRemoved){
+                return 0.5 * bet;
             }
             
             return bet;
@@ -177,9 +195,10 @@ public class Blackjack extends ConsoleProgram
 
     private double playRound(double bankroll)
     {
+        AtomicBoolean cardsRemoved = new AtomicBoolean(false);
         int roundNums = readInt("How many playing fields you want to play on? (max 5): ");
-        if (roundNums<1) roundNums=1;
-        else if (roundNums>5) roundNums=5;
+        if (roundNums < 1) roundNums = 1;
+        else if (roundNums > 5) roundNums = 5;
         int[] bet = new int[6];
         for (int i=1; i<=roundNums; i++) {
             bet[i] = readInt("What is your bet for " + i + " field: ");
@@ -187,110 +206,45 @@ public class Blackjack extends ConsoleProgram
 
         Deck deck = new Deck();
         deck.shuffle();
-        
-        Hand player1 = new Hand();
-        Hand player2 = new Hand();
-        Hand player3 = new Hand();
-        Hand player4 = new Hand();
-        Hand player5 = new Hand();
+
+        Hand[] players = new Hand[5];
+        for (int i = 0; i < roundNums; i++) {
+            players[i] = new Hand();
+            players[i].addCard(deck.deal());
+            players[i].addCard(deck.deal());
+        }
+
         Hand dealer = new Hand();
-        
-        player1.addCard(deck.deal());
         dealer.addCard(deck.deal());
-        player1.addCard(deck.deal());
         dealer.addCard(deck.deal());
-        player2.addCard(deck.deal());
-        player2.addCard(deck.deal());
-        player3.addCard(deck.deal());
-        player3.addCard(deck.deal());
-        player4.addCard(deck.deal());
-        player4.addCard(deck.deal());
-        player5.addCard(deck.deal());
-        player5.addCard(deck.deal());
 
         System.out.println("Dealer's hand");
-        //System.out.println(dealer);
         dealer.printDealerHand();
-        
-        System.out.println("Player's first field: ");
-        System.out.println(player1);
-        boolean playerBusted = playerTurn(player1, deck);
-        if(playerBusted) {
-            System.out.println("You busted :(");
-        }
 
-        if(roundNums>=2) {
-            System.out.println("Player's second field: ");
-            System.out.println(player2);
-            playerBusted = playerTurn(player2, deck);
-            if(playerBusted)
-            {
-                System.out.println("You busted :(");
-            }
-        }
-
-        if(roundNums>=3) {
-            System.out.println("Player's third field: ");
-            System.out.println(player3);
-            playerBusted = playerTurn(player3, deck);
-            if(playerBusted)
-            {
-                System.out.println("You busted :(");
-            }
-        }
-        if(roundNums>=4) {
-            System.out.println("Player's fourth field: ");
-            System.out.println(player4);
-            playerBusted = playerTurn(player4, deck);
-            if(playerBusted)
-            {
-                System.out.println("You busted :(");
-            }
-        }
-        if(roundNums>=5) {
-            System.out.println("Player's fifth field: ");
-            System.out.println(player5);
-            playerBusted = playerTurn(player5, deck);
-            if(playerBusted)
-            {
-                System.out.println("You busted :(");
+        for (int i = 0; i < roundNums; i++) {
+            System.out.println("Player's field " + (i + 1) + ": ");
+            System.out.println(players[i]);
+            boolean playerBusted = playerTurn(players[i], deck, cardsRemoved);
+            if (playerBusted) {
+                System.out.println("You busted on field " + (i + 1) + " :(");
             }
         }
 
         readLine("Enter for dealer turn...");
         dealerTurn(dealer, deck);
 
-        System.out.print("Hand on the first field (" + bet[1] + "): ");
-        double bankrollChange = findWinner(dealer, player1, bet[1]);
-        bankroll += bankrollChange;
-
-        if(roundNums>=2) {
-            System.out.print("Hand on the second field (" + bet[2] + "): ");
-            bankrollChange = findWinner(dealer, player2, bet[2]);
-            bankroll += bankrollChange;
-        }
-
-        if(roundNums>=3) {
-            System.out.print("Hand on the third field (" + bet[3] + "): ");
-            bankrollChange = findWinner(dealer, player3, bet[3]);
-            bankroll += bankrollChange;
-        }
-        if(roundNums>=4) {
-            System.out.print("Hand on the fourth field (" + bet[4] + "): ");
-            bankrollChange = findWinner(dealer, player4, bet[4]);
-            bankroll += bankrollChange;
-        }
-        if(roundNums>=5) {
-            System.out.print("Hand on the fifth field (" + bet[5] + "): ");
-            bankrollChange = findWinner(dealer, player5, bet[5]);
+        for (int i = 0; i < roundNums; i++) {
+            System.out.print("Hand on the field " + (i + 1) + " (" + bet[i+1] + "): " + cardsRemoved);
+            double bankrollChange = findWinner(dealer, players[i], bet[i + 1], cardsRemoved.get());
             bankroll += bankrollChange;
         }
 
         System.out.println("New bankroll: " + bankroll);
-        
+
         return bankroll;
     }
-    
+
+
     /**
      * Play the blackjack game. Initialize the bankroll and keep
      * playing roudns as long as the user wants to.

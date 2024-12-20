@@ -84,4 +84,9 @@ public class Deck
         }
     }
 
+    public void removeHighCards() {
+        deck.removeIf(card -> card.getValue() >= 9 && card.getValue() <= 13);
+    }
+
+
 }
