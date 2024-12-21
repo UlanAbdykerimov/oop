@@ -6,7 +6,7 @@
  * of ways to improve the game? Can you think of ways to improve the code
  * or organize the code?
  * 
- * @author jkeesh
+ * @author Ulan
  *
  */
 public class Blackjack extends ConsoleProgram
@@ -219,7 +219,6 @@ public class Blackjack extends ConsoleProgram
             // Restore cards if removed for the next field
             if (cardsRemoved[i]) {
                 deck.restoreHighCards();
-                cardsRemoved[i] = false;
                 System.out.println("High cards (9 to King) restored for the next field.");
             }
         }

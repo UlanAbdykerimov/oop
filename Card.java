@@ -37,13 +37,13 @@ public class Card
      * This is the constructor to create a new Card. To create a new card
      * we pass in its rank and its suit.
      * 
-     * @param r	The rank of the card, as an int.
-     * @param s	The suit of the card, as an int.
+     * @param rank	The rank of the card, as an int.
+     * @param suit	The suit of the card, as an int.
      */
-    public Card(int r, int s)
+    public Card(int rank, int suit)
     {
-        rank = r;
-        suit = s;
+        this.rank = rank;
+        this.suit = suit;
     }
     
     // Getter Methods
@@ -155,5 +155,4 @@ public class Card
         return rankString + suitString;
     }
 
-    
 }

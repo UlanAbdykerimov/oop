@@ -71,39 +71,31 @@ public class Deck
      * This shuffles the deck by making 52 swaps of
      * card positions.
      */
-    public void shuffle()
-    {
-        for(int i = 0; i < deck.size(); i++)
-        {
-            int randomIndex = Randomizer.nextInt(52);
-            Card x = deck.get(i);
-            Card y = deck.get(randomIndex);
-            
-            deck.set(i, y);
-            deck.set(randomIndex, x);
-        }
+    public void shuffle() {
         if (deck == null || deck.isEmpty()) {
             throw new IllegalStateException("Cannot shuffle an empty deck.");
         }
-        Collections.shuffle(deck); // Shuffle the cards randomly
+        Collections.shuffle(deck);
     }
 
+
+    private List<Card> removedHighCards = new ArrayList<>();
+
     public void removeHighCards() {
-        deck.removeIf(card -> card.getValue() >= 9 && card.getValue() <= 13);
-    }
-    public void restoreHighCards() {
-        // Restore cards from 9 to King into the deck if they are not already present
-        for (int rank = 9; rank <= KING; rank++) {
-            for (int suit = HEARTS; suit <= CLUBS; suit++) {
-                Card card = new Card(rank, suit);
-                if (!deck.contains(card)) {
-                    deck.add(card); // Add the card only if it is missing
-                }
+        removedHighCards.clear();
+        Iterator<Card> iterator = deck.iterator();
+        while (iterator.hasNext()) {
+            Card card = iterator.next();
+            if (card.getValue() >= 9 && card.getValue() <= 13) {
+                removedHighCards.add(card);
+                iterator.remove();
             }
         }
     }
 
-
-
+    public void restoreHighCards() {
+        deck.addAll(removedHighCards);
+        removedHighCards.clear(); // Clear the list after restoration
+    }
 
 }
